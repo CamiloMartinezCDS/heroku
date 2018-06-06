@@ -16,7 +16,8 @@
     "ejs": "^2.5.6",
     "express": "^4.16.3",
     "mongodb": "^3.0.10",
-    "pg": "^7.4.3"
+    "pg": "^7.4.3",
+    "sendgrid": "^5.2.3"
   },
   "devDependencies": {
     "request": "^2.81.0",

@@ -10,13 +10,16 @@ var CONTACTS_COLLECTION = "contacts"
 const PORT = process.env.PORT || 5000
 
 const pool = new Pool({
-  connectionString: 'postgres://qhxindpxmbvwzk:a2d9f5349e93980317295d2fa58061533210fb21de3cf7f516180dc1f3427dee@ec2-54-204-2-26.compute-1.amazonaws.com:5432/d75omanv9qj10q',
+  connectionString: process.env.DATABASE_URL || 'postgres://qhxindpxmbvwzk:a2d9f5349e93980317295d2fa58061533210fb21de3cf7f516180dc1f3427dee@ec2-54-204-2-26.compute-1.amazonaws.com:5432/d75omanv9qj10q',
   ssl: true
 })
 
+const sg = require('sendgrid')(process.env.SENDGRID_API_KEY || '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')
+
 var db
 
-mongodb.MongoClient.connect(process.env.MONGODB_URI || "mongodb://cdelsur_admin:cdelsur1@ds151180.mlab.com:51180/heroku_j1mh12hh", function (err, client) {
+mongodb.MongoClient.connect(process.env.MONGODB_URI || "mongodb://cmartinez:cdelsur1@localhost:27017/heroku-local", function (err, client) {
+  console.log(process.env.MONGODB_URI)
   if (err) {
     console.log(err);
     process.exit(1);
@@ -76,9 +79,34 @@ mongodb.MongoClient.connect(process.env.MONGODB_URI || "mongodb://cdelsur_admin:
       }
     })
   })
+  app.post('/api/mail', (req, res) => {
+    const env = process.env.NODE_ENV || 'local'
+    var helper = require('sendgrid').mail
+    var from_email = new helper.Email(req.body.from)
+    var to_email = new helper.Email(req.body.to)
+    var subject = req.body.subject
+    var content = new helper.Content('text/plain', `${req.body.content} from env: ${env}`)
+    var mail = new helper.Mail(from_email, subject, to_email, content)
+    var request = sg.emptyRequest({
+      method: 'POST',
+      path: '/v3/mail/send',
+      body: mail.toJSON(),
+    })
+    sg.API(request, function(error, response) {
+      if (error) {
+        handleError(response, error.message, "Failed to create send mail.")
+      } else {
+        console.log('Status code => ' + response.statusCode);
+        console.log('Body => ' + response.body);
+        console.log('Headers => ' + response.headers);
+        res.status(response.statusCode).json(response.body)
+      }
+    })
+  })
   .listen(PORT, () => console.log(`Listening on ${ PORT }`))
 })
 
 function handleError(res, message, prettyMessage) {
   console.log(`Res => ${res} - ${message} - ${prettyMessage}`)
+  response.status(res.statusCode).json(response.body);
 }
